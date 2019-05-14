@@ -1,0 +1,80 @@
+<Workspace Version="1.3.4.6666" X="300" Y="233" zoom="1.1575" ScaleFactor="1" Name="RIE.ElementsOnSheet" Description="Input Sheet and retrieve all elements. This nodes get all elementIds by performing a deletion of the sheet, then undoing the transaction whilst retrieving all deleted elementIds, then retrieves all the elements that were restored.&#xD;&#xA;Therefore the sheets you input must be closed in the UI, or they cannot be deleted, hence this node will output null." ID="dd373cdf-0d82-4aaa-8346-f5a9164b15fe" Category="RIE.Views">
+  <NamespaceResolutionMap />
+  <Elements>
+    <PythonNodeModels.PythonNode guid="016e0999-fd6d-4209-bfff-9fb958cbdbed" type="PythonNodeModels.PythonNode" nickname="Elements On Sheet [Python]" x="250" y="0" isVisible="true" isUpstreamVisible="true" lacing="Disabled" isSelectedInput="False" IsFrozen="false" isPinned="false" inputcount="1">
+      <PortInfo index="0" default="False" />
+      <Script>#Copyright(c) 2015, Konrad Sobon
+# @arch_laboratory, http://archi-lab.net
+
+import clr
+clr.AddReference('ProtoGeometry')
+from Autodesk.DesignScript.Geometry import *
+
+# Import ToDSType(bool) extension method
+clr.AddReference('RevitNodes')
+import Revit
+clr.ImportExtensions(Revit.Elements)
+
+# Import DocumentManager and TransactionManager
+clr.AddReference('RevitServices')
+import RevitServices
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+
+# Import RevitAPI
+clr.AddReference('RevitAPI')
+import Autodesk
+from Autodesk.Revit.DB import *
+
+doc = DocumentManager.Instance.CurrentDBDocument
+
+#The inputs to this node will be stored as a list in the IN variable.
+dataEnteringNode = IN
+
+elements = []
+for i in IN[0]:
+	elements.append(UnwrapElement(i))
+
+TransactionManager.Instance.EnsureInTransaction(doc)
+
+schName, schId, ids = [], [], []
+for i in elements:
+	trans = SubTransaction(doc)
+	trans.Start()
+	ids.append(doc.Delete(i.Id))
+	trans.RollBack()
+
+		
+TransactionManager.Instance.TransactionTaskDone()
+
+
+
+elementsOnSheet = []
+elementsOnSheet1 = []
+for i in ids:
+	for j in i:
+		if doc.GetElement(j) != None:
+			elementsOnSheet.append(doc.GetElement(j).GetType())
+			elementsOnSheet1.append(doc.GetElement(j))
+
+OUT = elementsOnSheet1</Script>
+    </PythonNodeModels.PythonNode>
+    <Dynamo.Graph.Nodes.CustomNodes.Output guid="528bd360-53e3-4d36-8b0b-0b3a73e7668c" type="Dynamo.Graph.Nodes.CustomNodes.Output" nickname="Output" x="445.205183585313" y="-0.863930885529157" isVisible="true" isUpstreamVisible="true" lacing="Disabled" isSelectedInput="False" IsFrozen="false" isPinned="false">
+      <PortInfo index="0" default="False" />
+      <Symbol value="Elements" />
+    </Dynamo.Graph.Nodes.CustomNodes.Output>
+    <Dynamo.Graph.Nodes.CustomNodes.Symbol guid="c02e05d7-deab-4d0c-b265-cf9a8827ce3c" type="Dynamo.Graph.Nodes.CustomNodes.Symbol" nickname="Input" x="164.14686825054" y="0" isVisible="true" isUpstreamVisible="true" lacing="Disabled" isSelectedInput="True" IsFrozen="false" isPinned="false">
+      <Symbol value="Sheets" />
+    </Dynamo.Graph.Nodes.CustomNodes.Symbol>
+  </Elements>
+  <Connectors>
+    <Dynamo.Graph.Connectors.ConnectorModel start="016e0999-fd6d-4209-bfff-9fb958cbdbed" start_index="0" end="528bd360-53e3-4d36-8b0b-0b3a73e7668c" end_index="0" portType="0" />
+    <Dynamo.Graph.Connectors.ConnectorModel start="c02e05d7-deab-4d0c-b265-cf9a8827ce3c" start_index="0" end="016e0999-fd6d-4209-bfff-9fb958cbdbed" end_index="0" portType="0" />
+  </Connectors>
+  <Notes />
+  <Annotations />
+  <Presets />
+  <Cameras>
+    <Camera Name="Background Preview" eyeX="-54.314703466617" eyeY="434.781466072886" eyeZ="249.779061102064" lookX="42.7571129819978" lookY="-434.781466072886" lookZ="-297.104286932142" upX="0.0971474509789403" upY="0.73135370161917" upZ="-0.675043802946321" />
+  </Cameras>
+</Workspace>
